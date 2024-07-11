@@ -10,18 +10,20 @@
       <h3 id="usaddress-parser"><i class="fa fa-fw fa-map-marker-alt"></i> U.S. address parser</h3>
       <p>Dealing with some messy or unstructured addresses? We can parse them for you.</p>
       <div class="card card-body bg-light">
-        <p><strong>Try it out!</strong> Parse an address in the United States into fields like <code>AddressNumber</code>, <code>StreetName</code> and <code>ZipCode</code>.</p>
-        <form class="form" role="form">
+        <p><strong>Try it out!</strong> Parse an address in the United States into fields like
+          <code>AddressNumber</code>, <code>StreetName</code> and <code>ZipCode</code>.
+        </p>
+        <form class="form" role="form" id="addressForm">
           {% csrf_token %}
-          <input name="address" type="text" class="form-control" id="address" placeholder="123 Main St. Suite 100 Chicago, IL">
+          <input name="address" type="text" class="form-control" id="address"
+            placeholder="123 Main St. Suite 100 Chicago, IL">
           <button id="submit" type="submit" class="btn btn-success mt-3">Parse!</button>
         </form>
       </div>
-      <!-- TODO: Display parsed address components here. -->
       <div id="address-results" style="display:none">
         <h4>Parsing results</h4>
         <p>Address type: <strong><span id="parse-type"></span></strong></p>
-        <table class="table table-bordered">
+        <table class="table table-bordered" id="parsed-components">
           <thead>
             <tr>
               <th>Address part</th>
@@ -38,5 +40,46 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/index.js' %}"></script>
+<script src="{% static 'js/index.js' %}"></script>
+<script src="{% static 'js/index.js' %}"></script>
+
+<script>
+  $(document).ready(function () {
+    $('#addressForm').submit(function (event) {
+
+      event.preventDefault();
+
+      var formData = {
+        'address': $('#address').val()
+      };
+
+      $.ajax({
+        type: 'GET',
+        url: '/api/parse/', // URL AddressParse API endpoint, as defined in ./urls.py
+        data: formData,
+        dataType: 'json',
+        encode: true,
+        success: function (data) {
+          console.log(data);
+
+          $('#parse-type').text(data.address_type);
+
+          $('#parsed-components').empty();
+
+          $.each(data.address_components, function (key, value) {
+            $('#parsed-components').append('<tr><td>' + key + '</td><td>' + value + '</td></tr>');
+          });
+
+          // Display the results section
+          $('#address-results').show();
+        },
+        error: function (xhr, textStatus, errorThrown) {
+          console.error('Error fetching parsed address:', errorThrown);
+          // Handle error case, show error message or fallback
+          alert('Error fetching parsed address.');
+        }
+      });
+    });
+  });
+</script>
 {% endblock %}
